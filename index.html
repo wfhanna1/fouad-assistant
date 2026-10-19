@@ -284,27 +284,68 @@ function appendMessage(text, sender) {
   chatBox.scrollTop = chatBox.scrollHeight;
 }
 
+function appendCallButton(c) {
+  const a = document.createElement('a');
+  a.className = 'call-btn';
+  a.style.alignSelf = 'flex-start';
+  a.href = 'tel:' + c.phone.replace(/[^\d+]/g, '');
+  a.textContent = '📞 Call ' + c.name;
+  chatBox.appendChild(a);
+  chatBox.scrollTop = chatBox.scrollHeight;
+}
+
+const JOKES = [
+  'Why did the tomato turn red? Because it saw the salad dressing!',
+  'What do you call a sleeping bull? A bulldozer!',
+  'Why do bees have sticky hair? Because they use honeycombs!'
+];
+let jokeIndex = 0;
+
 function processAIResponse(query) {
   const lower = query.toLowerCase();
   const has = (...words) => words.some(w => new RegExp('\\b' + w + '\\b').test(lower));
-  let reply = 'I am here to help you, Fouad. What else do you need?';
+  let reply = "I'm not sure about that, Fouad. You can ask me the time, the date, to call someone, to hear a joke, or tap Open Gemini for bigger questions.";
+  let callTarget = null;
 
-  if (has('time')) {
-    reply = 'The current time is ' + new Date().toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' }) + '.';
-  } else if (has('date', 'day', 'today')) {
-    reply = 'Today is ' + new Date().toLocaleDateString([], { weekday: 'long', month: 'long', day: 'numeric' }) + '.';
-  } else if (has('weather')) {
+  const named = contacts.find(c => lower.includes(c.name.toLowerCase()));
+  if (has('call', 'phone', 'ring') && named) {
+    callTarget = named;
+    reply = 'Okay. Tap the green button to call ' + named.name + '.';
+  } else if (has('call', 'phone', 'ring')) {
+    reply = contacts.length
+      ? 'Who would you like to call? Say call, and then the name, like call ' + contacts[0].name + '.'
+      : 'You have no saved contacts yet. Go to Call Contacts to add one.';
+  } else if (has('time', 'clock')) {
+    reply = 'The time is ' + new Date().toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' }) + '.';
+  } else if (has('date', 'day', 'today', 'month')) {
+    reply = 'Today is ' + new Date().toLocaleDateString([], { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' }) + '.';
+  } else if (has('weather', 'rain', 'temperature')) {
     reply = "I can't check the weather yet. Please look out the window or ask family.";
-  } else if (has('hello', 'hi', 'hey')) {
-    reply = "Hello Fouad! It's great to talk with you. How is your day going?";
+  } else if (has('joke', 'funny', 'laugh')) {
+    reply = JOKES[jokeIndex++ % JOKES.length];
+  } else if (has('thanks', 'thank')) {
+    reply = "You're very welcome, Fouad.";
+  } else if (has('how') && has('you')) {
+    reply = "I'm doing well, thank you for asking. How are you feeling today?";
+  } else if (has('who') && has('you')) {
+    reply = "I'm your helper, Fouad. I can tell you the time, help you call family, and show you guides.";
+  } else if (has('tired', 'sick', 'pain', 'hurt', 'dizzy', 'fell', 'fall')) {
+    reply = "I'm sorry you don't feel well. If you are in pain or have fallen, please go back home and press the purple Emergency Help button. Or I can help you call family.";
   } else if (has('medicine', 'medication', 'pill', 'pills')) {
-    reply = 'Remember to check your medication schedule or ask family for assistance.';
-  } else if (has('help', 'emergency')) {
+    reply = 'Check the label on your bottle. Go to Daily Help and Guides, then Taking Medications, for the steps.';
+  } else if (has('tv', 'television', 'remote')) {
+    reply = 'Go to Daily Help and Guides, then Turning on the TV.';
+  } else if (has('volume', 'louder', 'quieter')) {
+    reply = 'Go to Daily Help and Guides, then Adjusting Volume.';
+  } else if (has('hello', 'hi', 'hey', 'morning', 'evening')) {
+    reply = "Hello Fouad! It's great to talk with you. How is your day going?";
+  } else if (has('help', 'emergency', '911')) {
     reply = 'If this is an emergency, go back home and press the purple Emergency Help button.';
   }
 
   setTimeout(() => {
     appendMessage(reply, 'ai');
+    if (callTarget) appendCallButton(callTarget);
     speakText(reply);
   }, 600);
 }
