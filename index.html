@@ -1,0 +1,317 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Fouad">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="theme-color" content="#004080">
+<title>Fouad's Assistant</title>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; font-family: Arial, sans-serif; }
+body {
+  background-color: #f4f6f9; color: #111; padding: 20px;
+  display: flex; flex-direction: column; align-items: center; min-height: 100vh;
+}
+header { width: 100%; max-width: 600px; text-align: center; margin-bottom: 25px; }
+h1 { font-size: 34px; color: #004080; margin-bottom: 8px; }
+p.subtitle { font-size: 22px; color: #555; }
+.container { width: 100%; max-width: 600px; display: flex; flex-direction: column; gap: 20px; }
+.card {
+  background: white; border-radius: 16px; padding: 25px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.1); display: flex; flex-direction: column; gap: 15px;
+}
+.btn-grid { display: grid; grid-template-columns: 1fr; gap: 20px; }
+.big-btn {
+  background-color: #0056b3; color: white; border: none; border-radius: 16px; padding: 30px;
+  font-size: 26px; font-weight: bold; cursor: pointer; text-align: center;
+  box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+}
+.big-btn:active { transform: scale(0.98); }
+.btn-green { background-color: #28a745; }
+.btn-orange { background-color: #fd7e14; }
+.btn-purple { background-color: #6f42c1; }
+.back-btn {
+  background-color: #6c757d; color: white; border: none; border-radius: 12px; padding: 15px 25px;
+  font-size: 20px; font-weight: bold; cursor: pointer; align-self: flex-start; margin-bottom: 5px;
+}
+.view { display: none; }
+.view.active { display: flex; flex-direction: column; gap: 15px; }
+.chat-box {
+  background: #eef2f7; border-radius: 12px; padding: 15px; min-height: 150px; max-height: 250px;
+  overflow-y: auto; font-size: 20px; display: flex; flex-direction: column; gap: 10px;
+}
+.message { padding: 12px 16px; border-radius: 10px; max-width: 85%; }
+.message.user { background: #0056b3; color: white; align-self: flex-end; }
+.message.ai { background: #fff; color: #333; align-self: flex-start; border: 1px solid #ccc; }
+.voice-controls { display: flex; gap: 15px; }
+.voice-btn {
+  flex: 1; background-color: #dc3545; color: white; border: none; border-radius: 14px;
+  padding: 22px; font-size: 24px; font-weight: bold; cursor: pointer; text-align: center;
+}
+.voice-btn.listening { background-color: #ffc107; color: #000; }
+.contact-item {
+  display: flex; justify-content: space-between; align-items: center; background: #f8f9fa;
+  padding: 15px; border-radius: 10px; border: 1px solid #dee2e6; font-size: 22px;
+}
+.call-btn {
+  background-color: #28a745; color: white; border: none; padding: 12px 22px; border-radius: 8px;
+  font-size: 20px; font-weight: bold; cursor: pointer; text-decoration: none; display: inline-block;
+}
+.del-btn {
+  background: #dc3545; color: white; border: none; padding: 12px 16px; border-radius: 8px;
+  font-size: 18px; margin-left: 8px; cursor: pointer;
+}
+.form-group { display: flex; flex-direction: column; gap: 8px; }
+.form-group label { font-size: 20px; font-weight: bold; }
+.form-group input { padding: 15px; font-size: 20px; border: 2px solid #ccc; border-radius: 8px; }
+.input-btn {
+  background-color: #0056b3; color: white; border: none; padding: 15px; font-size: 20px;
+  border-radius: 8px; font-weight: bold; cursor: pointer;
+}
+</style>
+</head>
+<body>
+<header>
+  <h1>Hello, Fouad!</h1>
+  <p class="subtitle">What would you like to do today?</p>
+</header>
+
+<div class="container">
+  <!-- HOME -->
+  <div id="home-view" class="view active">
+    <div class="btn-grid">
+      <button class="big-btn btn-green" onclick="switchView('ai-view')">🎤 Talk to AI Assistant</button>
+      <button class="big-btn" onclick="switchView('contacts-view')">📞 Call Contacts</button>
+      <button class="big-btn btn-orange" onclick="switchView('help-view')">📖 Daily Help &amp; Guides</button>
+      <button class="big-btn btn-purple" onclick="switchView('emergency-view')">🚨 Emergency Help</button>
+    </div>
+  </div>
+
+  <!-- AI VOICE ASSISTANT -->
+  <div id="ai-view" class="view">
+    <button class="back-btn" onclick="switchView('home-view')">⬅ Back Home</button>
+    <div class="card">
+      <h2 style="font-size: 24px; color: #004080;">AI Voice Assistant</h2>
+      <div class="chat-box" id="chat-box">
+        <div class="message ai">Hello Fouad! Tap the red button below and tell me how I can help you today.</div>
+      </div>
+      <div class="voice-controls">
+        <button class="voice-btn" id="mic-btn" onclick="toggleListening()">🎤 Tap to Speak</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- CONTACTS -->
+  <div id="contacts-view" class="view">
+    <button class="back-btn" onclick="switchView('home-view')">⬅ Back Home</button>
+    <div class="card">
+      <h2 style="font-size: 24px; color: #004080;">Your Contacts</h2>
+      <div id="contacts-list" style="display: flex; flex-direction: column; gap: 10px;"></div>
+      <hr style="margin: 10px 0;">
+      <h3 style="font-size: 20px;">Add New Contact</h3>
+      <div class="form-group">
+        <label for="new-name">Name:</label>
+        <input type="text" id="new-name" placeholder="e.g. Son, Doctor">
+      </div>
+      <div class="form-group">
+        <label for="new-phone">Phone Number:</label>
+        <input type="tel" id="new-phone" placeholder="e.g. 5550199">
+      </div>
+      <button class="input-btn" onclick="addContact()">Save Contact</button>
+    </div>
+  </div>
+
+  <!-- HELP -->
+  <div id="help-view" class="view">
+    <button class="back-btn" onclick="switchView('home-view')">⬅ Back Home</button>
+    <div class="card">
+      <h2 style="font-size: 24px; color: #004080;">Daily Guides</h2>
+      <button class="input-btn" onclick="showGuide('meds')">💊 Taking Medications</button>
+      <button class="input-btn" onclick="showGuide('tv')">📺 Turning on the TV</button>
+      <button class="input-btn" onclick="showGuide('volume')">🔊 Adjusting Volume</button>
+      <div id="guide-content" style="font-size: 20px; background: #eef2f7; padding: 15px; border-radius: 8px; margin-top: 10px; display: none;"></div>
+    </div>
+  </div>
+
+  <!-- EMERGENCY -->
+  <div id="emergency-view" class="view">
+    <button class="back-btn" onclick="switchView('home-view')">⬅ Back Home</button>
+    <div class="card" style="border: 3px solid #dc3545;">
+      <h2 style="font-size: 28px; color: #dc3545; text-align: center;">EMERGENCY ASSISTANCE</h2>
+      <p style="font-size: 20px; text-align: center;">Press the button below to call emergency services immediately.</p>
+      <a href="tel:911" class="big-btn" style="background-color: #dc3545; text-align: center; text-decoration: none; display: block; padding: 35px;">CALL 911 NOW</a>
+    </div>
+  </div>
+</div>
+
+<script>
+const STORE_KEY = 'fouad_clean_contacts';
+
+function switchView(viewId) {
+  document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+  document.getElementById(viewId).classList.add('active');
+  window.scrollTo(0, 0);
+}
+
+// Contacts (start empty, stored on this device only)
+let contacts = [];
+try { contacts = JSON.parse(localStorage.getItem(STORE_KEY)) || []; } catch (e) { contacts = []; }
+
+function saveContacts() {
+  try { localStorage.setItem(STORE_KEY, JSON.stringify(contacts)); } catch (e) {}
+}
+
+function renderContacts() {
+  const list = document.getElementById('contacts-list');
+  list.innerHTML = '';
+  if (contacts.length === 0) {
+    const p = document.createElement('p');
+    p.style.cssText = 'font-size: 18px; color: #666;';
+    p.textContent = 'No contacts saved yet. Add one below!';
+    list.appendChild(p);
+    return;
+  }
+  contacts.forEach((c, index) => {
+    const div = document.createElement('div');
+    div.className = 'contact-item';
+
+    const name = document.createElement('strong');
+    name.textContent = c.name;
+
+    const actions = document.createElement('div');
+    const call = document.createElement('a');
+    call.className = 'call-btn';
+    call.href = 'tel:' + c.phone.replace(/[^\d+]/g, '');
+    call.textContent = 'Call';
+    const del = document.createElement('button');
+    del.className = 'del-btn';
+    del.textContent = 'X';
+    del.onclick = () => deleteContact(index);
+
+    actions.append(call, del);
+    div.append(name, actions);
+    list.appendChild(div);
+  });
+}
+
+function addContact() {
+  const nameInput = document.getElementById('new-name');
+  const phoneInput = document.getElementById('new-phone');
+  const name = nameInput.value.trim();
+  const phone = phoneInput.value.trim();
+  if (!name || !phone) {
+    alert('Please enter both name and phone number.');
+    return;
+  }
+  contacts.push({ name, phone });
+  saveContacts();
+  nameInput.value = '';
+  phoneInput.value = '';
+  renderContacts();
+}
+
+function deleteContact(index) {
+  if (!confirm('Remove ' + contacts[index].name + '?')) return;
+  contacts.splice(index, 1);
+  saveContacts();
+  renderContacts();
+}
+renderContacts();
+
+// Voice assistant
+let recognition = null;
+let isListening = false;
+const micBtn = document.getElementById('mic-btn');
+const chatBox = document.getElementById('chat-box');
+
+function toggleListening() {
+  const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+  if (!SR) {
+    alert('Speech recognition is not supported on this browser. Please open this in Safari.');
+    return;
+  }
+  if (isListening) {
+    recognition.stop();
+    return;
+  }
+  recognition = new SR();
+  recognition.lang = 'en-US';
+  recognition.onresult = (event) => {
+    const text = event.results[0][0].transcript;
+    appendMessage(text, 'user');
+    processAIResponse(text);
+  };
+  recognition.onerror = () => {
+    appendMessage("Sorry Fouad, I didn't catch that. Please try again.", 'ai');
+  };
+  recognition.onend = stopListening;
+  recognition.start();
+  isListening = true;
+  micBtn.textContent = '👂 Listening... Speak Now';
+  micBtn.classList.add('listening');
+}
+
+function stopListening() {
+  isListening = false;
+  micBtn.textContent = '🎤 Tap to Speak';
+  micBtn.classList.remove('listening');
+}
+
+function appendMessage(text, sender) {
+  const msg = document.createElement('div');
+  msg.className = 'message ' + sender;
+  msg.textContent = text;
+  chatBox.appendChild(msg);
+  chatBox.scrollTop = chatBox.scrollHeight;
+}
+
+function processAIResponse(query) {
+  const lower = query.toLowerCase();
+  const has = (...words) => words.some(w => new RegExp('\\b' + w + '\\b').test(lower));
+  let reply = 'I am here to help you, Fouad. What else do you need?';
+
+  if (has('time')) {
+    reply = 'The current time is ' + new Date().toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' }) + '.';
+  } else if (has('date', 'day', 'today')) {
+    reply = 'Today is ' + new Date().toLocaleDateString([], { weekday: 'long', month: 'long', day: 'numeric' }) + '.';
+  } else if (has('weather')) {
+    reply = "I can't check the weather yet. Please look out the window or ask family.";
+  } else if (has('hello', 'hi', 'hey')) {
+    reply = "Hello Fouad! It's great to talk with you. How is your day going?";
+  } else if (has('medicine', 'medication', 'pill', 'pills')) {
+    reply = 'Remember to check your medication schedule or ask family for assistance.';
+  } else if (has('help', 'emergency')) {
+    reply = 'If this is an emergency, go back home and press the purple Emergency Help button.';
+  }
+
+  setTimeout(() => {
+    appendMessage(reply, 'ai');
+    speakText(reply);
+  }, 600);
+}
+
+function speakText(text) {
+  if ('speechSynthesis' in window) {
+    const utterance = new SpeechSynthesisUtterance(text);
+    utterance.rate = 0.9;
+    window.speechSynthesis.speak(utterance);
+  }
+}
+
+// Daily guides
+const GUIDES = {
+  meds: '<strong>Taking Medications:</strong><br>1. Check the label on your medicine bottle.<br>2. Take the exact prescribed pill with water.<br>3. If unsure, call your doctor or family.',
+  tv: '<strong>Turning on the TV:</strong><br>1. Pick up the large black remote control.<br>2. Press the red power button at the top left.<br>3. Wait a few seconds for the picture to appear.',
+  volume: '<strong>Adjusting Volume:</strong><br>1. Find the volume buttons on your remote.<br>2. Press (+) to make it louder, or (-) to make it softer.'
+};
+
+function showGuide(topic) {
+  const box = document.getElementById('guide-content');
+  box.style.display = 'block';
+  box.innerHTML = GUIDES[topic];
+}
+</script>
+</body>
+</html>
