@@ -96,12 +96,13 @@ p.subtitle { font-size: 22px; color: #555; }
       <a href="shortcuts://run-shortcut?name=Open%20Gemini" class="big-btn btn-green" style="text-decoration: none; display: block;">✨ Open Gemini</a>
       <p style="font-size: 16px; color: #666;">Or use the simple assistant below.</p>
       <h2 style="font-size: 24px; color: #004080;">AI Voice Assistant</h2>
-      <div class="chat-box" id="chat-box">
+      <div class="chat-box" id="chat-box" role="log" aria-live="polite" aria-label="Conversation">
         <div class="message ai">Hello Fouad! Tap the red button below and tell me how I can help you today.</div>
       </div>
       <div class="voice-controls">
         <button class="voice-btn" id="mic-btn" onclick="toggleListening()">🎤 Tap to Speak</button>
       </div>
+      <button class="input-btn" onclick="repeatLast()">🔊 Say that again</button>
     </div>
   </div>
 
@@ -136,7 +137,7 @@ p.subtitle { font-size: 22px; color: #555; }
       <button class="input-btn" onclick="showGuide('meds')">💊 Taking Medications</button>
       <button class="input-btn" onclick="showGuide('tv')">📺 Turning on the TV</button>
       <button class="input-btn" onclick="showGuide('volume')">🔊 Adjusting Volume</button>
-      <div id="guide-content" style="font-size: 20px; background: #eef2f7; padding: 15px; border-radius: 8px; margin-top: 10px; display: none;"></div>
+      <div id="guide-content" aria-live="polite" style="font-size: 20px; background: #eef2f7; padding: 15px; border-radius: 8px; margin-top: 10px; display: none;"></div>
     </div>
   </div>
 
@@ -146,7 +147,7 @@ p.subtitle { font-size: 22px; color: #555; }
     <div class="card" style="border: 3px solid #dc3545;">
       <h2 style="font-size: 28px; color: #dc3545; text-align: center;">EMERGENCY ASSISTANCE</h2>
       <p style="font-size: 20px; text-align: center;">Press the button below to call emergency services immediately.</p>
-      <a href="tel:911" class="big-btn" style="background-color: #dc3545; text-align: center; text-decoration: none; display: block; padding: 35px;">CALL 911 NOW</a>
+      <a href="tel:911" aria-label="Call 9 1 1 now" class="big-btn" style="background-color: #dc3545; text-align: center; text-decoration: none; display: block; padding: 35px;">CALL 911 NOW</a>
     </div>
   </div>
 </div>
@@ -154,10 +155,20 @@ p.subtitle { font-size: 22px; color: #555; }
 <script>
 const STORE_KEY = 'fouad_clean_contacts';
 
+const VIEW_SPEECH = {
+  'home-view': 'Home. Choose: Talk to AI Assistant, Call Contacts, Daily Help and Guides, or Emergency Help.',
+  'ai-view': 'Assistant. Tap the Open Gemini button, or the red Tap to Speak button.',
+  'contacts-view': 'Contacts. Tap Phone Favorites, or iPhone Contacts, to call someone.',
+  'help-view': 'Daily guides. Choose Medications, Television, or Volume.',
+  'emergency-view': 'Emergency. The big red button calls 9 1 1.'
+};
+
 function switchView(viewId) {
   document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
   document.getElementById(viewId).classList.add('active');
   window.scrollTo(0, 0);
+  const say = VIEW_SPEECH[viewId];
+  if (say) speakText(say);
 }
 
 // Contacts (start empty, stored on this device only)
@@ -254,6 +265,7 @@ function toggleListening() {
   recognition.onend = stopListening;
   recognition.start();
   isListening = true;
+  window.speechSynthesis && window.speechSynthesis.cancel();
   micBtn.textContent = '👂 Listening... Speak Now';
   micBtn.classList.add('listening');
 }
@@ -297,13 +309,26 @@ function processAIResponse(query) {
   }, 600);
 }
 
+let lastSpoken = '';
 function speakText(text) {
-  if ('speechSynthesis' in window) {
-    const utterance = new SpeechSynthesisUtterance(text);
-    utterance.rate = 0.9;
-    window.speechSynthesis.speak(utterance);
-  }
+  if (!('speechSynthesis' in window)) return;
+  lastSpoken = text;
+  window.speechSynthesis.cancel();
+  const utterance = new SpeechSynthesisUtterance(text);
+  utterance.lang = 'en-US';
+  utterance.rate = 0.85;
+  window.speechSynthesis.speak(utterance);
 }
+
+function repeatLast() {
+  speakText(lastSpoken || 'Nothing to repeat yet.');
+}
+
+// iOS only allows speech after a tap, so say hello on the first tap
+document.addEventListener('click', function hello() {
+  document.removeEventListener('click', hello);
+  speakText(VIEW_SPEECH['home-view']);
+}, { once: true });
 
 // Daily guides
 const GUIDES = {
@@ -316,6 +341,7 @@ function showGuide(topic) {
   const box = document.getElementById('guide-content');
   box.style.display = 'block';
   box.innerHTML = GUIDES[topic];
+  speakText(box.textContent.replace(/\s+/g, ' '));
 }
 </script>
 </body>
